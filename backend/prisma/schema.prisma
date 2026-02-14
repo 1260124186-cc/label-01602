@@ -1,0 +1,81 @@
+// Prisma Schema for 租房信息发布与查询平台
+// 使用 MongoDB 作为数据库
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// 用户角色枚举
+enum Role {
+  user
+  admin
+}
+
+// 房源状态枚举
+enum ListingStatus {
+  pending   // 待审核
+  approved  // 已通过
+  rejected  // 已驳回
+}
+
+// 租房类型枚举
+enum RentType {
+  whole   // 整租
+  shared  // 合租
+}
+
+// 用户模型
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String   // bcrypt 加密存储
+  name      String
+  role      Role     @default(user)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联：一个用户可以发布多个房源
+  listings Listing[]
+
+  @@map("users")
+}
+
+// 房源模型
+model Listing {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // 基础信息（必填）
+  title        String        // 房源标题
+  rent         Int           // 月租金（元）
+  address      String        // 详细地址
+  rentType     RentType      // 租房类型：整租/合租
+  
+  // 可选信息
+  area         Int?          // 面积（平方米）
+  floor        String?       // 楼层信息，如 "3/6层"
+  tags         String[]      // 标签数组，如 ["近地铁", "独卫", "有空调"]
+  description  String?       // 详细描述
+  
+  // 审核相关
+  status       ListingStatus @default(pending)
+  rejectReason String?       // 驳回原因（当状态为rejected时填写）
+  
+  // 发布者关联
+  userId       String        @db.ObjectId
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 时间戳
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // 索引：按状态查询、按用户查询、按创建时间排序
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("listings")
+}

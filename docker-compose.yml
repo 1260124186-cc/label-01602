@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # MongoDB 数据库 (配置为副本集以支持 Prisma 事务)
+  mongo:
+    image: mongo:7
+    container_name: rental-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - rental-network
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: |
+        mongosh --eval "
+        try {
+          rs.status().ok
+        } catch (e) {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]})
+        }
+        " | grep -q 1
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  # 后端 API 服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rental-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mongodb://mongo:27017/rental_platform?replicaSet=rs0&directConnection=true
+      - JWT_SECRET=rental-platform-jwt-secret-key-2024
+      - JWT_EXPIRES_IN=7d
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - rental-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 前端管理后台
+  frontend-admin:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+      args:
+        # 构建时使用的环境变量 - 浏览器访问的地址
+        - NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+    container_name: rental-frontend-admin
+    restart: unless-stopped
+    ports:
+      - "8082:3000"
+    environment:
+      - NODE_ENV=production
+      # 浏览器访问后端的地址
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+      # 服务端渲染时访问后端的地址（Docker 内部网络）
+      - API_URL=http://backend:3001
+    depends_on:
+      - backend
+    networks:
+      - rental-network
+
+  # 数据库初始化服务（运行一次后退出）
+  db-seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rental-db-seed
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mongodb://mongo:27017/rental_platform?replicaSet=rs0&directConnection=true
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - rental-network
+    command: >
+      sh -c "
+        echo 'Waiting for MongoDB replica set...' &&
+        sleep 10 &&
+        npx prisma@5.18.0 db push &&
+        node prisma/seed.js &&
+        echo 'Database seeded successfully!'
+      "
+    restart: "no"
+
+networks:
+  rental-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+    driver: local
