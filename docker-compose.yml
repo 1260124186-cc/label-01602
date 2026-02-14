@@ -10,7 +10,7 @@ services:
       - "27017:27017"
     volumes:
       - mongo_data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./backend/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     networks:
       - rental-network
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
@@ -65,7 +65,7 @@ services:
     container_name: rental-frontend-admin
     restart: unless-stopped
     ports:
-      - "8082:3000"
+      - "8081:3000"
     environment:
       - NODE_ENV=production
       # 浏览器访问后端的地址
