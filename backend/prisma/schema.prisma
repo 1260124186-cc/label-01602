@@ -57,7 +57,7 @@ model Listing {
   
   // 可选信息
   area         Int?          // 面积（平方米）
-  floor        String?       // 楼层信息，如 "3/6层"
+  floor        Int?          // 楼层（整数）
   tags         String[]      // 标签数组，如 ["近地铁", "独卫", "有空调"]
   description  String?       // 详细描述
   

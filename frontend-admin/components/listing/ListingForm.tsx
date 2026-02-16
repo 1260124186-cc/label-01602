@@ -25,7 +25,7 @@ export function ListingForm({ initialData, onSubmit, loading }: ListingFormProps
     address: initialData?.address || '',
     rentType: initialData?.rentType || 'shared',
     area: initialData?.area || undefined,
-    floor: initialData?.floor || '',
+    floor: initialData?.floor || undefined,
     tags: initialData?.tags || [],
     description: initialData?.description || '',
   });
@@ -41,6 +41,10 @@ export function ListingForm({ initialData, onSubmit, loading }: ListingFormProps
     }
     if (!formData.rent || formData.rent <= 0) {
       newErrors.rent = '请输入有效的租金';
+    } else if (!Number.isInteger(formData.rent)) {
+      newErrors.rent = '租金必须为整数，不能包含小数';
+    } else if (formData.rent > 100000) {
+      newErrors.rent = '租金不能超过100000元';
     }
     if (!formData.address || formData.address.length < 5) {
       newErrors.address = '地址至少5个字符';
@@ -102,7 +106,18 @@ export function ListingForm({ initialData, onSubmit, loading }: ListingFormProps
               type="number"
               placeholder="请输入月租金"
               value={formData.rent || ''}
-              onChange={(e) => handleChange('rent', Number(e.target.value))}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange('rent', val === '' ? 0 : Math.floor(Number(val)));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === '.' || e.key === 'e' || e.key === 'E') {
+                  e.preventDefault();
+                }
+              }}
+              step="1"
+              min="1"
+              max="100000"
               error={errors.rent}
             />
             
@@ -133,14 +148,37 @@ export function ListingForm({ initialData, onSubmit, loading }: ListingFormProps
               type="number"
               placeholder="可选"
               value={formData.area || ''}
-              onChange={(e) => handleChange('area', e.target.value ? Number(e.target.value) : undefined)}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange('area', val === '' ? undefined : Math.floor(Number(val)));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === '.' || e.key === 'e' || e.key === 'E') {
+                  e.preventDefault();
+                }
+              }}
+              step="1"
+              min="1"
+              max="1000"
             />
             
             <Input
               label="楼层"
-              placeholder="例如：3/6层"
+              type="number"
+              placeholder="可选"
               value={formData.floor || ''}
-              onChange={(e) => handleChange('floor', e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleChange('floor', val === '' ? undefined : Math.floor(Number(val)));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === '.' || e.key === 'e' || e.key === 'E') {
+                  e.preventDefault();
+                }
+              }}
+              step="1"
+              min="1"
+              max="200"
             />
           </div>
           

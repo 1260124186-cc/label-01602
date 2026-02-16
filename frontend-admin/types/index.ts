@@ -63,7 +63,7 @@ export interface Listing {
   address: string;
   rentType: RentType;
   area: number | null;
-  floor: string | null;
+  floor: number | null;
   tags: string[];
   description: string | null;
   status: ListingStatus;
@@ -81,7 +81,7 @@ export interface CreateListingRequest {
   address: string;
   rentType: RentType;
   area?: number;
-  floor?: string;
+  floor?: number;
   tags?: string[];
   description?: string;
 }
@@ -93,7 +93,7 @@ export interface UpdateListingRequest {
   address?: string;
   rentType?: RentType;
   area?: number;
-  floor?: string;
+  floor?: number;
   tags?: string[];
   description?: string;
 }

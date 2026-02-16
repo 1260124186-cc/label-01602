@@ -162,7 +162,7 @@ export default function ListingDetailPage() {
                   </svg>
                 </div>
                 <p className="text-xs text-gray-500 mb-1">楼层</p>
-                <p className="font-semibold text-gray-900">{listing.floor || '-'}</p>
+                <p className="font-semibold text-gray-900">{listing.floor ? `${listing.floor}层` : '-'}</p>
               </div>
               
               <div className="text-center p-4 bg-gray-50 rounded-xl">

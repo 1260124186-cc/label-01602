@@ -80,7 +80,7 @@ export function validateCreateListing(data: unknown): ValidationResult {
     return { valid: false, errors: ['无效的请求数据'] };
   }
   
-  const { title, rent, address, rentType, area, tags } = data as CreateListingRequest;
+  const { title, rent, address, rentType, area, floor, tags } = data as CreateListingRequest;
   
   // 标题验证
   if (!title || typeof title !== 'string') {
@@ -94,6 +94,8 @@ export function validateCreateListing(data: unknown): ValidationResult {
     errors.push('租金不能为空');
   } else if (typeof rent !== 'number' || rent <= 0 || rent > 100000) {
     errors.push('租金需在1-100000元之间');
+  } else if (!Number.isInteger(rent)) {
+    errors.push('租金必须为整数，不能包含小数');
   }
   
   // 地址验证
@@ -112,6 +114,17 @@ export function validateCreateListing(data: unknown): ValidationResult {
   if (area !== undefined && area !== null) {
     if (typeof area !== 'number' || area <= 0 || area > 1000) {
       errors.push('面积需在1-1000平方米之间');
+    } else if (!Number.isInteger(area)) {
+      errors.push('面积必须为整数，不能包含小数');
+    }
+  }
+  
+  // 楼层验证（可选）
+  if (floor !== undefined && floor !== null) {
+    if (typeof floor !== 'number' || floor <= 0 || floor > 200) {
+      errors.push('楼层需在1-200之间');
+    } else if (!Number.isInteger(floor)) {
+      errors.push('楼层必须为整数，不能包含小数');
     }
   }
   
@@ -139,7 +152,7 @@ export function validateUpdateListing(data: unknown): ValidationResult {
     return { valid: false, errors: ['无效的请求数据'] };
   }
   
-  const { title, rent, address, rentType, area, tags } = data as UpdateListingRequest;
+  const { title, rent, address, rentType, area, floor, tags } = data as UpdateListingRequest;
   
   // 标题验证（如果提供）
   if (title !== undefined) {
@@ -152,6 +165,8 @@ export function validateUpdateListing(data: unknown): ValidationResult {
   if (rent !== undefined) {
     if (typeof rent !== 'number' || rent <= 0 || rent > 100000) {
       errors.push('租金需在1-100000元之间');
+    } else if (!Number.isInteger(rent)) {
+      errors.push('租金必须为整数，不能包含小数');
     }
   }
   
@@ -171,6 +186,17 @@ export function validateUpdateListing(data: unknown): ValidationResult {
   if (area !== undefined && area !== null) {
     if (typeof area !== 'number' || area <= 0 || area > 1000) {
       errors.push('面积需在1-1000平方米之间');
+    } else if (!Number.isInteger(area)) {
+      errors.push('面积必须为整数，不能包含小数');
+    }
+  }
+  
+  // 楼层验证（如果提供）
+  if (floor !== undefined && floor !== null) {
+    if (typeof floor !== 'number' || floor <= 0 || floor > 200) {
+      errors.push('楼层需在1-200之间');
+    } else if (!Number.isInteger(floor)) {
+      errors.push('楼层必须为整数，不能包含小数');
     }
   }
   

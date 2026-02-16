@@ -22,11 +22,13 @@ export function ListingFilterBar({ onFilter, loading }: ListingFilterProps) {
   const [maxRent, setMaxRent] = useState('');
   
   const handleSearch = () => {
+    const parsedMinRent = minRent ? Math.floor(Number(minRent)) : undefined;
+    const parsedMaxRent = maxRent ? Math.floor(Number(maxRent)) : undefined;
     onFilter({
       keyword: keyword || undefined,
       rentType: rentType as ListingFilter['rentType'] || undefined,
-      minRent: minRent ? Number(minRent) : undefined,
-      maxRent: maxRent ? Number(maxRent) : undefined,
+      minRent: parsedMinRent && parsedMinRent > 0 ? parsedMinRent : undefined,
+      maxRent: parsedMaxRent && parsedMaxRent > 0 ? parsedMaxRent : undefined,
       page: 1,
     });
   };
@@ -39,7 +41,11 @@ export function ListingFilterBar({ onFilter, loading }: ListingFilterProps) {
     onFilter({ page: 1 });
   };
   
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleRentKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === '.' || e.key === 'e' || e.key === 'E') {
+      e.preventDefault();
+      return;
+    }
     if (e.key === 'Enter') {
       handleSearch();
     }
@@ -75,7 +81,7 @@ export function ListingFilterBar({ onFilter, loading }: ListingFilterProps) {
               placeholder="搜索标题或地址..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(); }}
               className="pl-10"
             />
           </div>
@@ -102,7 +108,9 @@ export function ListingFilterBar({ onFilter, loading }: ListingFilterProps) {
               placeholder="最低"
               value={minRent}
               onChange={(e) => setMinRent(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={handleRentKeyDown}
+              step="1"
+              min="0"
             />
             <span className="text-gray-300 flex-shrink-0">—</span>
             <Input
@@ -110,7 +118,9 @@ export function ListingFilterBar({ onFilter, loading }: ListingFilterProps) {
               placeholder="最高"
               value={maxRent}
               onChange={(e) => setMaxRent(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={handleRentKeyDown}
+              step="1"
+              min="0"
             />
           </div>
         </div>
