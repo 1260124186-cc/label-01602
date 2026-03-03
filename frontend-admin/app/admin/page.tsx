@@ -12,11 +12,12 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Textarea } from '@/components/ui/Textarea';
 import { RentTypeBadge, StatusBadge } from '@/components/ui/Badge';
 import { PageLoading, EmptyState } from '@/components/ui/Loading';
+import { ListingForm } from '@/components/listing/ListingForm';
 import { adminApi } from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToastStore } from '@/store/useToastStore';
 import { formatMoney, formatArea, formatDateTime } from '@/lib/utils';
-import type { Listing } from '@/types';
+import type { CreateListingRequest, Listing } from '@/types';
 
 export default function AdminPage() {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -39,6 +40,12 @@ export default function AdminPage() {
     open: false,
     listingId: null,
     title: '',
+  });
+
+  // 修改弹窗
+  const [editModal, setEditModal] = useState<{ open: boolean; listing: Listing | null }>({
+    open: false,
+    listing: null,
   });
   
   const fetchPendingListings = useCallback(async () => {
@@ -136,6 +143,30 @@ export default function AdminPage() {
   
   const openDeleteDialog = (id: string, title: string) => {
     setDeleteDialog({ open: true, listingId: id, title });
+  };
+
+  const openEditModal = (listing: Listing) => {
+    setEditModal({ open: true, listing });
+  };
+
+  const handleAdminUpdate = async (data: CreateListingRequest) => {
+    if (!editModal.listing || !isAuthenticated || !isAdmin) return;
+
+    setActionLoading(editModal.listing.id);
+    try {
+      const response = await adminApi.update(editModal.listing.id, data);
+      if (response.success && response.data) {
+        toast.success('修改成功');
+        setListings(prev => prev.map(l => (l.id === response.data?.id ? response.data : l)));
+        setEditModal({ open: false, listing: null });
+      } else {
+        toast.error(response.error || '修改失败');
+      }
+    } catch {
+      toast.error('网络错误');
+    } finally {
+      setActionLoading(null);
+    }
   };
   
   const handleDelete = async () => {
@@ -290,7 +321,15 @@ export default function AdminPage() {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap justify-end">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => openEditModal(listing)}
+                        disabled={actionLoading === listing.id}
+                      >
+                        修改
+                      </Button>
                       <Button
                         size="sm"
                         onClick={() => handleApprove(listing.id)}
@@ -326,6 +365,23 @@ export default function AdminPage() {
           </div>
         )}
         
+        {/* 管理员修改弹窗 */}
+        <Modal
+          isOpen={editModal.open}
+          onClose={() => setEditModal({ open: false, listing: null })}
+          title="修改房源"
+          size="lg"
+        >
+          {editModal.listing && (
+            <ListingForm
+              initialData={editModal.listing}
+              onSubmit={handleAdminUpdate}
+              loading={actionLoading === editModal.listing.id}
+              inModal
+            />
+          )}
+        </Modal>
+
         {/* 驳回原因弹窗 */}
         <Modal
           isOpen={rejectModal.open}

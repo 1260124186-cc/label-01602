@@ -42,23 +42,23 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
   };
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* 背景遮罩 */}
       <div
         className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
       />
       
-      {/* 模态框内容 */}
+      {/* 模态框内容：固定高度，flex 布局 */}
       <div
         className={cn(
-          'relative bg-white rounded-card shadow-xl w-full mx-4',
+          'relative flex flex-col bg-white rounded-card shadow-xl w-full mx-4 max-h-[90vh]',
           sizeStyles[size]
         )}
       >
-        {/* 标题栏 */}
+        {/* 标题栏 - 固定 */}
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
             <button
               onClick={onClose}
@@ -71,8 +71,8 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
           </div>
         )}
         
-        {/* 内容区 */}
-        <div className="p-6">
+        {/* 内容区 - 可滚动，子元素可占满并自管理内部滚动 */}
+        <div className="flex-1 min-h-0 flex flex-col p-6">
           {children}
         </div>
       </div>

@@ -16,9 +16,11 @@ interface ListingFormProps {
   initialData?: Listing;
   onSubmit: (data: CreateListingRequest) => Promise<void>;
   loading?: boolean;
+  /** 在弹窗内使用时为 true，主内容区滚动、底部按钮固定 */
+  inModal?: boolean;
 }
 
-export function ListingForm({ initialData, onSubmit, loading }: ListingFormProps) {
+export function ListingForm({ initialData, onSubmit, loading, inModal }: ListingFormProps) {
   const [formData, setFormData] = useState<CreateListingRequest>({
     title: initialData?.title || '',
     rent: initialData?.rent || 0,
@@ -81,14 +83,8 @@ export function ListingForm({ initialData, onSubmit, loading }: ListingFormProps
   // 常用标签
   const commonTags = ['近地铁', '精装修', '有空调', '独卫', '拎包入住', '有暖气', '电梯房', '限女生', '限男生'];
   
-  return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardHeader>
-          <CardTitle>{initialData ? '编辑房源' : '发布新房源'}</CardTitle>
-        </CardHeader>
-        
-        <div className="space-y-6">
+  const formFields = (
+    <div className={inModal ? 'flex-1 min-h-0 overflow-y-auto space-y-6' : 'space-y-6'}>
           {/* 基础信息 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -259,15 +255,33 @@ export function ListingForm({ initialData, onSubmit, loading }: ListingFormProps
             onChange={(e) => handleChange('description', e.target.value)}
             rows={5}
           />
-          
-          {/* 提交按钮 */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-            <Button type="submit" loading={loading}>
-              {initialData ? '保存修改' : '提交审核'}
-            </Button>
-          </div>
         </div>
-      </Card>
+  );
+
+  const buttonBar = (
+    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+      <Button type="submit" loading={loading}>
+        {initialData ? '保存修改' : '提交审核'}
+      </Button>
+    </div>
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className={inModal ? 'flex flex-1 min-h-0 flex-col' : ''}>
+      {inModal ? (
+        <>
+          {formFields}
+          <div className="flex-shrink-0">{buttonBar}</div>
+        </>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>{initialData ? '编辑房源' : '发布新房源'}</CardTitle>
+          </CardHeader>
+          {formFields}
+          {buttonBar}
+        </Card>
+      )}
     </form>
   );
 }

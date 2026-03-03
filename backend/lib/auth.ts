@@ -50,14 +50,20 @@ export async function comparePassword(password: string, hashedPassword: string):
 }
 
 /**
- * 从请求头中获取 Token
+ * 从请求中获取 Token（优先 Authorization，其次 Cookie）
  */
-export function getTokenFromHeader(request: NextRequest): string | null {
+export function getTokenFromRequest(request: NextRequest): string | null {
   const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.substring(7);
   }
-  return authHeader.substring(7);
+
+  const cookieToken = request.cookies.get('token')?.value;
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  return null;
 }
 
 /**
@@ -70,7 +76,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
   payload?: JWTPayload;
   error?: string;
 }> {
-  const token = getTokenFromHeader(request);
+  const token = getTokenFromRequest(request);
   
   if (!token) {
     return { success: false, error: '未提供认证令牌' };

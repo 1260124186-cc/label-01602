@@ -63,9 +63,9 @@ export function Header() {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="grid h-16 items-center [grid-template-columns:1fr_auto_1fr] gap-3">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2 justify-self-start min-w-0">
             <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
@@ -75,7 +75,7 @@ export function Header() {
           </Link>
           
           {/* 桌面端导航 */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1 justify-self-center">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -93,7 +93,7 @@ export function Header() {
           </nav>
           
           {/* 用户操作 */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-self-end justify-end min-w-0">
             {/* 移动端菜单按钮 */}
             <div className="md:hidden relative" ref={mobileMenuRef}>
               <button

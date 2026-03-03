@@ -16,30 +16,36 @@ const getApiBaseUrl = () => {
 };
 
 /**
- * 获取存储的 Token
+ * 从 Cookie 获取 Token
  */
 function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('token');
+  if (typeof document === 'undefined') return null;
+
+  const tokenCookie = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith('token='));
+
+  if (!tokenCookie) {
+    return null;
+  }
+
+  return decodeURIComponent(tokenCookie.substring('token='.length));
 }
 
 /**
- * 设置 Token
+ * 设置 Token（仅写入 Cookie）
  */
 export function setToken(token: string): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('token', token);
-  // 同时设置 cookie 供中间件使用
-  document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+  if (typeof document === 'undefined') return;
+  document.cookie = `token=${encodeURIComponent(token)}; path=/; max-age=${7 * 24 * 60 * 60}; samesite=lax`;
 }
 
 /**
- * 移除 Token
+ * 移除 Token（仅清理 Cookie）
  */
 export function removeToken(): void {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('token');
-  document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  if (typeof document === 'undefined') return;
+  document.cookie = 'token=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax';
 }
 
 /**
@@ -203,6 +209,9 @@ export const listingApi = {
 export const adminApi = {
   /** 获取待审核房源 */
   getPendingListings: () => get<Listing[]>('/api/admin/listings'),
+
+  /** 修改违规房源 */
+  update: (id: string, data: UpdateListingRequest) => put<Listing>(`/api/admin/listings/${id}`, data),
   
   /** 审核通过 */
   approve: (id: string) => put<Listing>(`/api/admin/listings/${id}/approve`),
