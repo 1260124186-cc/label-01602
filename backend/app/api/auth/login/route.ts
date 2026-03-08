@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { comparePassword, generateToken } from '@/lib/auth';
+import { rsaDecrypt } from '@/lib/crypto';
 import { validateLogin } from '@/lib/validations';
 import type { LoginRequest, AuthResponse } from '@/types';
 
@@ -23,7 +24,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { email, password } = body as LoginRequest;
+    const { email, password, encrypted } = body as LoginRequest & { encrypted?: boolean };
+    
+    // 如果密码是加密传输的，先解密
+    let plainPassword = password;
+    if (encrypted) {
+      try {
+        plainPassword = rsaDecrypt(password);
+      } catch (err) {
+        console.error('[Auth] 密码解密失败:', err);
+        return NextResponse.json(
+          { success: false, error: '密码解密失败，请刷新页面重试' },
+          { status: 400 }
+        );
+      }
+    }
     
     // 查找用户
     const user = await prisma.user.findUnique({
@@ -38,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 验证密码
-    const isPasswordValid = await comparePassword(password, user.password);
+    const isPasswordValid = await comparePassword(plainPassword, user.password);
     
     if (!isPasswordValid) {
       return NextResponse.json(

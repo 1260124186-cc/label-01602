@@ -11,6 +11,8 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  /** 标记初始用户信息是否已加载完成（避免页面在状态未就绪时误判权限） */
+  isInitialized: boolean;
 
   // Actions
   setUser: (user: User | null) => void;
@@ -29,6 +31,7 @@ const getUnauthenticatedState = () => ({
 export const useAuthStore = create<AuthState>()((set, get) => ({
   ...getUnauthenticatedState(),
   isLoading: false,
+  isInitialized: false,
 
   setUser: (user) =>
     set({
@@ -96,7 +99,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       clearTokenCookie();
       set(getUnauthenticatedState());
     } finally {
-      set({ isLoading: false });
+      set({ isLoading: false, isInitialized: true });
     }
   },
 }));

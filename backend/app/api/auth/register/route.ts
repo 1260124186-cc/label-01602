@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { hashPassword, generateToken } from '@/lib/auth';
+import { rsaDecrypt } from '@/lib/crypto';
 import { validateRegister } from '@/lib/validations';
 import type { RegisterRequest, AuthResponse } from '@/types';
 
@@ -23,7 +24,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { email, password, name } = body as RegisterRequest;
+    const { email, password, name, encrypted } = body as RegisterRequest & { encrypted?: boolean };
+    
+    // 如果密码是加密传输的，先解密
+    let plainPassword = password;
+    if (encrypted) {
+      try {
+        plainPassword = rsaDecrypt(password);
+      } catch (err) {
+        console.error('[Auth] 密码解密失败:', err);
+        return NextResponse.json(
+          { success: false, error: '密码解密失败，请刷新页面重试' },
+          { status: 400 }
+        );
+      }
+    }
     
     // 检查邮箱是否已注册
     const existingUser = await prisma.user.findUnique({
@@ -38,7 +53,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 加密密码
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(plainPassword);
     
     // 创建用户
     const user = await prisma.user.create({

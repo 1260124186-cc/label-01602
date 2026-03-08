@@ -166,15 +166,97 @@ import type {
   RejectRequest,
 } from '@/types';
 
+/** 缓存的 RSA 公钥 */
+let cachedPublicKey: string | null = null;
+
+/**
+ * 获取 RSA 公钥（带缓存）
+ */
+async function getPublicKey(): Promise<string> {
+  if (cachedPublicKey) return cachedPublicKey;
+
+  const res = await get<{ publicKey: string }>('/api/auth/public-key');
+  if (res.success && res.data) {
+    cachedPublicKey = res.data.publicKey;
+    return cachedPublicKey;
+  }
+  throw new Error('获取公钥失败');
+}
+
+/**
+ * 将 PEM 格式公钥转为 CryptoKey
+ */
+async function importPublicKey(pem: string): Promise<CryptoKey> {
+  const pemBody = pem
+    .replace(/-----BEGIN PUBLIC KEY-----/, '')
+    .replace(/-----END PUBLIC KEY-----/, '')
+    .replace(/\s/g, '');
+  const raw = atob(pemBody);
+  const binaryDer = new ArrayBuffer(raw.length);
+  const view = new Uint8Array(binaryDer);
+  for (let i = 0; i < raw.length; i++) {
+    view[i] = raw.charCodeAt(i);
+  }
+
+  return crypto.subtle.importKey(
+    'spki',
+    binaryDer,
+    { name: 'RSA-OAEP', hash: 'SHA-256' },
+    false,
+    ['encrypt']
+  );
+}
+
+/**
+ * 使用 RSA 公钥加密密码
+ */
+async function encryptPassword(password: string): Promise<string> {
+  const pem = await getPublicKey();
+  const key = await importPublicKey(pem);
+  const encoded = new TextEncoder().encode(password);
+  const encrypted = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, key, encoded);
+  // 转为 Base64（兼容低版本 TS target）
+  const bytes = new Uint8Array(encrypted);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 /**
  * 认证相关 API
  */
 export const authApi = {
-  /** 注册 */
-  register: (data: RegisterRequest) => post<AuthResponse>('/api/auth/register', data),
+  /** 注册（密码加密传输） */
+  register: async (data: RegisterRequest) => {
+    try {
+      const encryptedPwd = await encryptPassword(data.password);
+      return post<AuthResponse>('/api/auth/register', {
+        ...data,
+        password: encryptedPwd,
+        encrypted: true,
+      });
+    } catch (err) {
+      console.warn('[Auth] 密码加密失败，回退明文传输:', err);
+      return post<AuthResponse>('/api/auth/register', data);
+    }
+  },
   
-  /** 登录 */
-  login: (data: LoginRequest) => post<AuthResponse>('/api/auth/login', data),
+  /** 登录（密码加密传输） */
+  login: async (data: LoginRequest) => {
+    try {
+      const encryptedPwd = await encryptPassword(data.password);
+      return post<AuthResponse>('/api/auth/login', {
+        ...data,
+        password: encryptedPwd,
+        encrypted: true,
+      });
+    } catch (err) {
+      console.warn('[Auth] 密码加密失败，回退明文传输:', err);
+      return post<AuthResponse>('/api/auth/login', data);
+    }
+  },
   
   /** 获取当前用户 */
   me: () => get<User>('/api/auth/me'),

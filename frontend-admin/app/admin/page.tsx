@@ -25,7 +25,7 @@ export default function AdminPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const toast = useToastStore();
   const router = useRouter();
-  const { isAuthenticated, isAdmin } = useAuthStore();
+  const { isAuthenticated, isAdmin, isInitialized } = useAuthStore();
   const isMounted = useRef(true);
   
   // 驳回弹窗
@@ -49,7 +49,7 @@ export default function AdminPage() {
   });
   
   const fetchPendingListings = useCallback(async () => {
-    if (!isAuthenticated || !isAdmin) {
+    if (!isInitialized || !isAuthenticated || !isAdmin) {
       setLoading(false);
       return;
     }
@@ -75,10 +75,13 @@ export default function AdminPage() {
         setLoading(false);
       }
     }
-  }, [toast, isAuthenticated, isAdmin]);
+  }, [toast, isAuthenticated, isAdmin, isInitialized]);
   
   useEffect(() => {
     isMounted.current = true;
+    
+    // 等待初始化完成后再做权限判断
+    if (!isInitialized) return;
     
     if (isAuthenticated && isAdmin) {
       fetchPendingListings();
@@ -91,7 +94,7 @@ export default function AdminPage() {
     return () => {
       isMounted.current = false;
     };
-  }, [fetchPendingListings, isAuthenticated, isAdmin, router]);
+  }, [fetchPendingListings, isAuthenticated, isAdmin, isInitialized, router]);
   
   const handleApprove = async (id: string) => {
     if (!isAuthenticated || !isAdmin) return;
@@ -189,7 +192,7 @@ export default function AdminPage() {
     }
   };
   
-  if (!isAuthenticated || !isAdmin) {
+  if (!isInitialized || !isAuthenticated || !isAdmin) {
     return <PageLoading />;
   }
   
