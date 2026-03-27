@@ -16,8 +16,9 @@ import type { Listing } from '@/types';
 export default function MyListingsPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
   const toast = useToastStore();
-  
+
   const fetchMyListings = useCallback(async () => {
     setLoading(true);
     try {
@@ -33,16 +34,16 @@ export default function MyListingsPage() {
       setLoading(false);
     }
   }, [toast]);
-  
+
   useEffect(() => {
     fetchMyListings();
   }, [fetchMyListings]);
-  
+
   // 按状态分组
   const pendingListings = listings.filter(l => l.status === 'pending');
   const approvedListings = listings.filter(l => l.status === 'approved');
   const rejectedListings = listings.filter(l => l.status === 'rejected');
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -68,11 +69,14 @@ export default function MyListingsPage() {
             </Button>
           </Link>
         </div>
-        
+
         {/* 统计卡片 */}
         {!loading && listings.length > 0 && (
           <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+            <div
+              className={`bg-white rounded-2xl p-4 border shadow-sm cursor-pointer transition-all ${selectedStatus === 'pending' ? 'border-yellow-400 ring-2 ring-yellow-200' : 'border-gray-100 hover:border-gray-300'}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'pending' ? null : 'pending')}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
                   <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +89,10 @@ export default function MyListingsPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+            <div
+              className={`bg-white rounded-2xl p-4 border shadow-sm cursor-pointer transition-all ${selectedStatus === 'approved' ? 'border-green-400 ring-2 ring-green-200' : 'border-gray-100 hover:border-gray-300'}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'approved' ? null : 'approved')}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,7 +105,10 @@ export default function MyListingsPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+            <div
+              className={`bg-white rounded-2xl p-4 border shadow-sm cursor-pointer transition-all ${selectedStatus === 'rejected' ? 'border-red-400 ring-2 ring-red-200' : 'border-gray-100 hover:border-gray-300'}`}
+              onClick={() => setSelectedStatus(selectedStatus === 'rejected' ? null : 'rejected')}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
                   <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +123,7 @@ export default function MyListingsPage() {
             </div>
           </div>
         )}
-        
+
         {loading ? (
           <PageLoading />
         ) : listings.length === 0 ? (
@@ -136,7 +146,7 @@ export default function MyListingsPage() {
         ) : (
           <div className="space-y-8">
             {/* 待审核 */}
-            {pendingListings.length > 0 && (
+            {(!selectedStatus || selectedStatus === 'pending') && pendingListings.length > 0 && (
               <section className="bg-yellow-50 rounded-2xl p-6 border border-yellow-100">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center">
@@ -162,9 +172,9 @@ export default function MyListingsPage() {
                 </div>
               </section>
             )}
-            
+
             {/* 已通过 */}
-            {approvedListings.length > 0 && (
+            {(!selectedStatus || selectedStatus === 'approved') && approvedListings.length > 0 && (
               <section className="bg-green-50 rounded-2xl p-6 border border-green-100">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
@@ -190,9 +200,9 @@ export default function MyListingsPage() {
                 </div>
               </section>
             )}
-            
+
             {/* 已驳回 */}
-            {rejectedListings.length > 0 && (
+            {(!selectedStatus || selectedStatus === 'rejected') && rejectedListings.length > 0 && (
               <section className="bg-red-50 rounded-2xl p-6 border border-red-100">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
